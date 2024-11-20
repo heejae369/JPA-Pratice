@@ -12,7 +12,9 @@ import java.util.List;
 import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -40,12 +42,14 @@ public class UserService {
     }
 
     public UserResponsDto createUser(String name, Integer age) {
-        Connection connection = null;
+        //TransactionSynchronizationManager로 트랜잭션 동기화
+        TransactionSynchronizationManager.initSynchronization();
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
-            connection = dataSource.getConnection();
-            connection.setAutoCommit(false); // 롤백하기 위한 트랜잭션 동기화 위해서
-            User user = userJdbcDao.createUser(connection, new User(null, name, age));
-            List<Message> messages = messageJdbcDao.save(connection, user.getId(),
+//            connection = dataSource.getConnection();
+            connection.setAutoCommit(false); // 롤백하기 위한 트랜잭션 동기화 위해서 자동커밋 끔
+            User user = userJdbcDao.createUser(/*connection,*/ new User(null, name, age));
+            List<Message> messages = messageJdbcDao.save(user.getId(),
                 user.getName() + "님 가입을 환영합니다.");
             connection.commit(); // 둘다 실행 후 commit
             UserResponsDto result = UserResponsDto.from(user);
@@ -59,6 +63,9 @@ public class UserService {
             }
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                 "자원 반납시 문제가 발생했습니다");
+        } finally {
+            // 동기화되서 쓰고있던 커넥션 반납
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 

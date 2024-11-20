@@ -14,6 +14,7 @@ import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -66,14 +67,16 @@ public class MessageJdbcDao {
         }
     }
 
-    // message dao와 userDao를 다루는 service에서 커넥션을 param으로 넘겨 트랜잭션 동기화 할 예정 - 원시적 방법
-    public List<Message> save(final Connection connection, Integer userId, String message)
+    // TransactionSynchronizationManager로 트랜잭션 동기화 된 것 가져옴
+    public List<Message> save(/*final Connection connection,*/ Integer userId, String message)
         throws SQLException {
         if (true) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                 "트랜잭션 롤백 여부를 확인하기 위한 의도된 예외");
         }
 //        Connection connection = null;           // 1 connection
+        Connection connection = DataSourceUtils.getConnection(
+            dataSource);           // 1 connection, DataSourceUtils.getConnection(dataSource)로 TransactionSynchronizationManager에 있는 커넥션 가져옴
         PreparedStatement statement = null;     // 2 statement
         ResultSet resultSet = null;             // 3 resultSet
         try {
@@ -84,7 +87,7 @@ public class MessageJdbcDao {
             statement.setInt(1, userId);
             statement.setString(2, message);
             statement.setTimestamp(3, Timestamp.valueOf(LocalDateTime.now()));
-            int executedNumberOfQuery = statement.executeUpdate();
+//            int executedNumberOfQuery = statement.executeUpdate();
             // SELECT MESSAGE
             statement = connection.prepareStatement("SELECT * FROM \"message\" WHERE user_id = ?");
             statement.setInt(1, userId);

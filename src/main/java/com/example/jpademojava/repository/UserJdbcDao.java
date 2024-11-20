@@ -1,19 +1,22 @@
 package com.example.jpademojava.repository;
 
 import com.example.jpademojava.domain.User;
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.server.ResponseStatusException;
 
 @Repository
+@RequiredArgsConstructor
+@Slf4j
 public class UserJdbcDao {
 
     @Value("${spring.datasource.url}")
@@ -30,16 +33,9 @@ public class UserJdbcDao {
     private String findSQL = "SELECT * FROM \"user\" WHERE id = ?";
     private String updateSQL = "SELECT * FROM \"user\" WHERE id = ?";
 
-    private DataSource dataSource() {
-        HikariConfig hikariConfig = new HikariConfig();
-        hikariConfig.setJdbcUrl(url);
-        hikariConfig.setUsername(username);
-        hikariConfig.setPassword(password);
-        hikariConfig.setDriverClassName(driverClassName);
 
-        HikariDataSource hikariDataSource = new HikariDataSource(hikariConfig);
-        return hikariDataSource;
-    }
+    //RequiredArgsConstructor로 인해 ()안해도됨
+    private final DataSource dataSource;
 
     public User findById(Integer id) throws SQLException {
 
@@ -47,7 +43,7 @@ public class UserJdbcDao {
         PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
         try {
-            connection = dataSource().getConnection();//dataSource
+            connection = dataSource.getConnection();//dataSource
             preparedStatement = connection.prepareStatement("SELECT * FROM \"user\" WHERE id = ?");
             preparedStatement.setInt(1, id);
             resultSet = preparedStatement.executeQuery();
@@ -82,7 +78,7 @@ public class UserJdbcDao {
         PreparedStatement preparedStatement = null;
         //ResultSet resultSet = null;
         try {
-            connection = dataSource().getConnection();//dataSource
+            connection = dataSource.getConnection();//dataSource
             preparedStatement = connection.prepareStatement("DELETE * FROM \"user\" WHERE id = ?");
             preparedStatement.setInt(1, id);
             //executeUpdate() : SQL 실행과 동시에 영향받은 ROW 개수 반환(DBMS가 보내줌)
@@ -112,9 +108,10 @@ public class UserJdbcDao {
     }
 
 
-    public User createUser(final Connection connection, User user) throws SQLException {
+    public User createUser(/*final Connection connection,*/ User user) throws SQLException {
         //try-with-resources 구조
         // connection은 service 에서 받아오니 메서드 안에서 설정 안해도됨
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (
             PreparedStatement preparedStatement = connection.prepareStatement(
                 "INSERT into \"user\" (name, age) VALUES (?, ?)");
@@ -197,7 +194,7 @@ public class UserJdbcDao {
     public void updateUser(Integer id, String name, Integer age) throws SQLException {
 
         try (
-            Connection connection = dataSource().getConnection();
+            Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(
                 "UPDATE \"user\" SET name = ?, age = ? WHRER id = ?");
         ) {
