@@ -25,9 +25,9 @@ public class MessageJdbcDao {
     private final DataSource dataSource;
 
     public List<Message> findByUserId(int userId) throws SQLException {
-        Connection connection = null;           // 1
-        PreparedStatement statement = null;     // 2
-        ResultSet resultSet = null;             // 3
+        Connection connection = null;           // 1 connection
+        PreparedStatement statement = null;     // 2 statement
+        ResultSet resultSet = null;             // 3 resultSet
         try {
             connection = dataSource.getConnection();
             statement = connection.prepareStatement("SELECT * FROM \"message\" WHERE user_id = ?");
@@ -55,29 +55,30 @@ public class MessageJdbcDao {
         } finally {
             // 자원반납
             if (resultSet != null) {
-                resultSet.close();   // 1
+                resultSet.close();   // 1 connection
             }
             if (statement != null) {
-                statement.close();   // 2
+                statement.close();   // 2 statement
             }
             if (connection != null) {
-                connection.close(); // 3
+                connection.close(); // 3 resultSet
             }
         }
     }
 
-    public List<Message> save(Integer userId, String message) throws SQLException {
+    // message dao와 userDao를 다루는 service에서 커넥션을 param으로 넘겨 트랜잭션 동기화 할 예정 - 원시적 방법
+    public List<Message> save(final Connection connection, Integer userId, String message)
+        throws SQLException {
         if (true) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                 "트랜잭션 롤백 여부를 확인하기 위한 의도된 예외");
         }
-        Connection connection = null;           // 1
-        PreparedStatement statement = null;     // 2
-        ResultSet resultSet = null;             // 3
+//        Connection connection = null;           // 1 connection
+        PreparedStatement statement = null;     // 2 statement
+        ResultSet resultSet = null;             // 3 resultSet
         try {
-            connection = dataSource.getConnection();    // 1
-            // INSERT MESSAGE
-            statement = connection.prepareStatement(    // (A)-2:Statement
+//            connection = dataSource.getConnection();
+            statement = connection.prepareStatement(
                 "INSERT INTO \"message\" (user_id, message, created_at) VALUES (?, ?, ?)"
             );
             statement.setInt(1, userId);

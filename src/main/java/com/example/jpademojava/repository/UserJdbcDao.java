@@ -112,63 +112,59 @@ public class UserJdbcDao {
     }
 
 
-    public User createUser(User user) throws SQLException {
+    public User createUser(final Connection connection, User user) throws SQLException {
         //try-with-resources 구조
-        // close 매번 안해도 됨 - try끝나면 자동반환
-        Connection connection = null;
-        try {
-            connection = dataSource().getConnection();//dataSource
+        // connection은 service 에서 받아오니 메서드 안에서 설정 안해도됨
+        try (
+            PreparedStatement preparedStatement = connection.prepareStatement(
+                "INSERT into \"user\" (name, age) VALUES (?, ?)");
+        ) {
 
-            try (
-                PreparedStatement preparedStatement = connection.prepareStatement(
-                    "INSERT into \"user\" (name, age) VALUES (?, ?)");
-            ) {
-
-                preparedStatement.setString(1, user.getName());
-                preparedStatement.setInt(2, user.getAge());
-                int resultRow = preparedStatement.executeUpdate();
-                if (resultRow == 0) {
-                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "생성 실패");
-                }
+            preparedStatement.setString(1, user.getName());
+            preparedStatement.setInt(2, user.getAge());
+            int resultRow = preparedStatement.executeUpdate();
+            if (resultRow == 0) {
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "생성 실패");
             }
+        }
 
-            // 만들어진 User 반환하기 위한 id 검색
-            Integer createdUserId = 0;
-            try (
-                PreparedStatement preparedStatement = connection.prepareStatement(
-                    "SELECT lastval() AS id");
-                ResultSet resultSet = preparedStatement.executeQuery();
-            ) {
+        // 만들어진 User 반환하기 위한 id 검색
+        Integer createdUserId = 0;
+        try (
+            PreparedStatement preparedStatement = connection.prepareStatement(
+                "SELECT lastval() AS id");
+            ResultSet resultSet = preparedStatement.executeQuery();
+        ) {
 
-                if (resultSet.next()) {
-                    createdUserId = resultSet.getInt("id");
-                } else {
-                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                        "생성 ID 검색실패");
-                }
-            } catch (SQLException e) {
+            if (resultSet.next()) {
+                createdUserId = resultSet.getInt("id");
+            } else {
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "lastval() 탐색 오류");
+                    "생성 ID 검색실패");
             }
-            try (
-                PreparedStatement preparedStatement = connection.prepareStatement(
-                    "SELECT * FROM \"user\" WHERE id = ?");
-            ) {
-                preparedStatement.setInt(1, createdUserId); // 먼저 파라미터 설정
-                try (ResultSet resultSet = preparedStatement.executeQuery()) { // 쿼리 실행
-                    if (resultSet.next()) {
-                        return new User(
-                            resultSet.getInt("id"),
-                            resultSet.getString("name"),
-                            resultSet.getInt("age")
-                        );
-                    } else {
-                        throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                            "DB에 해당 유저가 존재하지 않습니다");
-                    }
+        } catch (SQLException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                "lastval() 탐색 오류");
+        }
+        try (
+            PreparedStatement preparedStatement = connection.prepareStatement(
+                "SELECT * FROM \"user\" WHERE id = ?");
+        ) {
+            preparedStatement.setInt(1, createdUserId); // 먼저 파라미터 설정
+            try (ResultSet resultSet = preparedStatement.executeQuery()) { // 쿼리 실행
+                if (resultSet.next()) {
+                    return new User(
+                        resultSet.getInt("id"),
+                        resultSet.getString("name"),
+                        resultSet.getInt("age")
+                    );
+                } else {
+                    throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "DB에 해당 유저가 존재하지 않습니다");
                 }
             }
-            //lastval의 id를 넣어 만들어진 객체 검색
+        }
+        //lastval의 id를 넣어 만들어진 객체 검색
 //            try (
 //                PreparedStatement preparedStatement = connection.prepareStatement(
 //                    "SELECT * FROM \"user\" WHERE id = ?");
@@ -189,7 +185,7 @@ public class UserJdbcDao {
 //            } catch (SQLException e) {
 //                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "생성된 유저 탐색 오류");
 //            }
-        } catch (SQLException e) {
+        catch (SQLException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "DB 접근 시 문제 발생");
         } finally {
             if (!(connection == null)) {
