@@ -3,6 +3,7 @@ package com.example.jpademojava.common;
 import com.example.jpademojava.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.aop.framework.ProxyFactoryBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -12,6 +13,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 @RequiredArgsConstructor
 public class SpringProxyConfig {
 
+    @Autowired
     private final UserService userService;
     private final PlatformTransactionManager transactionManager;
 

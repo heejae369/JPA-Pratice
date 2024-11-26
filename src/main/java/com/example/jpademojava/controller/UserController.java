@@ -27,28 +27,29 @@ public class UserController {
 
     //    UserService userService;
 //    IUserService userServiceProxy; //Dynamic Proxy, @Autowired 사용할 때에 implements IUserService 안하면 빈 연결 문제있음
-    UserService userServiceCglibProxy;
+//    UserService userServiceCglibProxy;
+    UserService userService;
 
     @GetMapping("/{id}")
     public ResponseEntity<UserResponsDto> getUser(@PathVariable Integer id) {
-        log.info(userServiceCglibProxy.getClass().toString());
-        UserResponsDto userResponsDto = userServiceCglibProxy.findById(id);
+        log.info(userService.getClass().toString());
+        UserResponsDto userResponsDto = userService.findById(id);
         return ResponseEntity.status(HttpStatus.OK).body(userResponsDto);
     }
 
     // userRequestDto, 제작 필요
     @PostMapping()
     public ResponseEntity<UserResponsDto> createUser(@RequestBody UserRequestDto request) {
-        log.info(userServiceCglibProxy.getClass().toString());
-        UserResponsDto userResponsDto = userServiceCglibProxy.createUser(request.getName(),
+        log.info(userService.getClass().toString());
+        UserResponsDto userResponsDto = userService.createUser(request.getName(),
             request.getAge());
         return ResponseEntity.status(HttpStatus.CREATED).body(userResponsDto);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteUser(@PathVariable Integer id) {
-        log.info(userServiceCglibProxy.getClass().toString());
-        userServiceCglibProxy.deleteById(id);
+        log.info(userService.getClass().toString());
+        userService.deleteById(id);
         return ResponseEntity
             .status(HttpStatus.OK)
             .body("해당 유저가 삭제되었습니다");
@@ -57,8 +58,8 @@ public class UserController {
     @PutMapping("/{id}")
     public ResponseEntity<UserResponsDto> updateUser(@PathVariable Integer id,
         UserRequestDto requestDto) {
-        log.info(userServiceCglibProxy.getClass().toString());
-        UserResponsDto userResponsDto = userServiceCglibProxy.updateUser(id, requestDto);
+        log.info(userService.getClass().toString());
+        UserResponsDto userResponsDto = userService.updateUser(id, requestDto);
         return ResponseEntity
             .status(HttpStatus.OK)
             .body(userResponsDto);
