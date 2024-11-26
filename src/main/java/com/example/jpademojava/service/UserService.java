@@ -19,7 +19,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 @Service
 @RequiredArgsConstructor
 //@Slf4/j
-public class UserService implements IUserService {
+public class UserService /*implements IUserService //Dynamic Proxy 적용위한*/ {
 
     private final Logger log = LoggerFactory.getLogger(UserService.class);
     private final UserJdbcDao userJdbcDao;
