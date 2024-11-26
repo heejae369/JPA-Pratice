@@ -1,7 +1,6 @@
 package com.example.jpademojava.controller;
 
 
-import com.example.jpademojava.domain.User;
 import com.example.jpademojava.domain.dto.UserRequestDto;
 import com.example.jpademojava.domain.dto.UserResponsDto;
 import com.example.jpademojava.service.UserService;
@@ -28,9 +27,9 @@ public class UserController {
     UserService userService;
 
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUser(@PathVariable Integer id) {
-        User user = userService.findById(id);
-        return ResponseEntity.status(HttpStatus.OK).body(user);
+    public ResponseEntity<UserResponsDto> getUser(@PathVariable Integer id) {
+        UserResponsDto userResponsDto = userService.findById(id);
+        return ResponseEntity.status(HttpStatus.OK).body(userResponsDto);
     }
 
     // userRequestDto, 제작 필요
